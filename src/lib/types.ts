@@ -1,15 +1,21 @@
 // Type definitions for AI Shop
 // Structured for easy migration to Supabase or other databases
 
+export interface PricingTier {
+  duration: string;      // "1 ngày", "7 ngày", "1 tháng", "1 năm"
+  requestLimit: string;  // "Vô Hạn", "5000 Request", "10$", etc.
+  price: number;         // Price in VND
+  isPopular?: boolean;   // Highlight this tier
+}
+
 export interface Product {
   id: string;
   name: string;
   icon: string; // Lucide icon name
   imageUrl?: string; // Product image (base64 or URL)
-  price: number;
-  originalPrice?: number; // For showing discounts
   description: string;
   features: string[];
+  pricingTiers: PricingTier[]; // Multiple pricing options
   tag?: string; // e.g., "Best Seller", "Hot", "New"
   contactLink: string; // Zalo or Messenger link
   isActive: boolean;

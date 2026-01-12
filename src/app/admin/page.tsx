@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '@/lib/context';
-import { Product } from '@/lib/types';
+import { Product, PricingTier } from '@/lib/types';
 import {
     Shield,
     Package,
@@ -132,10 +132,9 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         name: '',
         icon: 'Sparkles',
         imageUrl: '',
-        price: 0,
-        originalPrice: 0,
         description: '',
         features: [''],
+        pricingTiers: [{ duration: '', requestLimit: '', price: 0, isPopular: false }] as PricingTier[],
         tag: '',
         contactLink: 'https://zalo.me/0944568913',
         isActive: true,
@@ -146,10 +145,9 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             name: '',
             icon: 'Sparkles',
             imageUrl: '',
-            price: 0,
-            originalPrice: 0,
             description: '',
             features: [''],
+            pricingTiers: [{ duration: '', requestLimit: '', price: 0, isPopular: false }],
             tag: '',
             contactLink: 'https://zalo.me/0944568913',
             isActive: true,
@@ -164,10 +162,9 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             name: product.name,
             icon: product.icon,
             imageUrl: product.imageUrl || '',
-            price: product.price,
-            originalPrice: product.originalPrice || 0,
             description: product.description,
-            features: product.features,
+            features: product.features.length > 0 ? product.features : [''],
+            pricingTiers: product.pricingTiers.length > 0 ? product.pricingTiers : [{ duration: '', requestLimit: '', price: 0, isPopular: false }],
             tag: product.tag || '',
             contactLink: product.contactLink,
             isActive: product.isActive,
@@ -178,10 +175,10 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
     const handleSaveProduct = () => {
         const productData = {
             ...productForm,
-            originalPrice: productForm.originalPrice || undefined,
-            tag: productForm.tag || undefined,
             imageUrl: productForm.imageUrl || undefined,
+            tag: productForm.tag || undefined,
             features: productForm.features.filter((f) => f.trim() !== ''),
+            pricingTiers: productForm.pricingTiers.filter((t) => t.duration.trim() !== ''),
         };
 
         if (editingProduct) {
@@ -243,6 +240,29 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         }
     };
 
+    // Add pricing tier
+    const addPricingTier = () => {
+        setProductForm({
+            ...productForm,
+            pricingTiers: [...productForm.pricingTiers, { duration: '', requestLimit: '', price: 0, isPopular: false }],
+        });
+    };
+
+    // Remove pricing tier
+    const removePricingTier = (index: number) => {
+        setProductForm({
+            ...productForm,
+            pricingTiers: productForm.pricingTiers.filter((_, i) => i !== index),
+        });
+    };
+
+    // Update pricing tier
+    const updatePricingTier = (index: number, field: keyof PricingTier, value: string | number | boolean) => {
+        const newTiers = [...productForm.pricingTiers];
+        newTiers[index] = { ...newTiers[index], [field]: value };
+        setProductForm({ ...productForm, pricingTiers: newTiers });
+    };
+
     const iconOptions = [
         'MessageSquare',
         'Code',
@@ -252,6 +272,11 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         'FileText',
         'Sparkles',
     ];
+
+    // Format price for display
+    const formatPrice = (price: number) => {
+        return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+    };
 
     return (
         <div className="min-h-screen bg-[#0a0a12]">
@@ -322,7 +347,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                                             value={productForm.name}
                                             onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
                                             className="input-dark w-full"
-                                            placeholder="ChatGPT Plus"
+                                            placeholder="Cursor Vô Hạn Request"
                                         />
                                     </div>
 
@@ -394,33 +419,6 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm text-[#a1a1aa] mb-2">Giá (VND)</label>
-                                        <input
-                                            type="number"
-                                            value={productForm.price}
-                                            onChange={(e) =>
-                                                setProductForm({ ...productForm, price: parseInt(e.target.value) || 0 })
-                                            }
-                                            className="input-dark w-full"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm text-[#a1a1aa] mb-2">Giá gốc (nếu có)</label>
-                                        <input
-                                            type="number"
-                                            value={productForm.originalPrice}
-                                            onChange={(e) =>
-                                                setProductForm({
-                                                    ...productForm,
-                                                    originalPrice: parseInt(e.target.value) || 0,
-                                                })
-                                            }
-                                            className="input-dark w-full"
-                                        />
-                                    </div>
-
-                                    <div>
                                         <label className="block text-sm text-[#a1a1aa] mb-2">Tag</label>
                                         <input
                                             type="text"
@@ -450,9 +448,69 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                                             onChange={(e) =>
                                                 setProductForm({ ...productForm, description: e.target.value })
                                             }
-                                            className="input-dark w-full h-24 resize-none"
+                                            className="input-dark w-full h-20 resize-none"
                                             placeholder="Mô tả sản phẩm..."
                                         />
+                                    </div>
+
+                                    {/* Pricing Tiers */}
+                                    <div className="md:col-span-2">
+                                        <label className="block text-sm text-[#a1a1aa] mb-2">Bảng giá</label>
+                                        <div className="space-y-2">
+                                            {/* Header */}
+                                            <div className="grid grid-cols-12 gap-2 text-xs text-[#71717a] px-2">
+                                                <div className="col-span-3">Thời hạn</div>
+                                                <div className="col-span-3">Request/Limit</div>
+                                                <div className="col-span-3">Giá (VND)</div>
+                                                <div className="col-span-2">Hot</div>
+                                                <div className="col-span-1"></div>
+                                            </div>
+                                            {productForm.pricingTiers.map((tier, index) => (
+                                                <div key={index} className="grid grid-cols-12 gap-2 items-center">
+                                                    <input
+                                                        type="text"
+                                                        value={tier.duration}
+                                                        onChange={(e) => updatePricingTier(index, 'duration', e.target.value)}
+                                                        className="input-dark col-span-3 text-sm"
+                                                        placeholder="1 tháng"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={tier.requestLimit}
+                                                        onChange={(e) => updatePricingTier(index, 'requestLimit', e.target.value)}
+                                                        className="input-dark col-span-3 text-sm"
+                                                        placeholder="Vô Hạn"
+                                                    />
+                                                    <input
+                                                        type="number"
+                                                        value={tier.price}
+                                                        onChange={(e) => updatePricingTier(index, 'price', parseInt(e.target.value) || 0)}
+                                                        className="input-dark col-span-3 text-sm"
+                                                        placeholder="250000"
+                                                    />
+                                                    <div className="col-span-2 flex justify-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={tier.isPopular || false}
+                                                            onChange={(e) => updatePricingTier(index, 'isPopular', e.target.checked)}
+                                                            className="w-4 h-4 accent-[#00ff88]"
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        onClick={() => removePricingTier(index)}
+                                                        className="col-span-1 text-red-500 hover:text-red-400 p-1"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <button
+                                            onClick={addPricingTier}
+                                            className="text-[#00ff88] hover:text-[#00cc6a] text-sm flex items-center gap-1 mt-2"
+                                        >
+                                            <Plus className="w-4 h-4" /> Thêm gói giá
+                                        </button>
                                     </div>
 
                                     <div className="md:col-span-2">
@@ -550,19 +608,24 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                                         )}
                                         <div className="flex-1">
                                             <div className="flex items-start justify-between">
-                                                <h3 className="font-semibold text-white">{product.name}</h3>
+                                                <h3 className="font-semibold text-white text-sm">{product.name}</h3>
                                                 {product.tag && (
-                                                    <span className="text-xs bg-[#00ff88]/10 text-[#00ff88] px-2 py-1 rounded">
+                                                    <span className="text-xs bg-[#00ff88]/10 text-[#00ff88] px-2 py-0.5 rounded">
                                                         {product.tag}
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="text-[#00ff88] font-bold">
-                                                {new Intl.NumberFormat('vi-VN').format(product.price)}đ
+                                            <p className="text-[#00ff88] font-bold text-sm">
+                                                {product.pricingTiers.length > 0
+                                                    ? `Từ ${formatPrice(Math.min(...product.pricingTiers.map(t => t.price)))}`
+                                                    : 'Chưa có giá'}
                                             </p>
                                         </div>
                                     </div>
-                                    <p className="text-sm text-[#a1a1aa] mb-4 line-clamp-2">{product.description}</p>
+                                    <p className="text-xs text-[#a1a1aa] mb-3 line-clamp-2">{product.description}</p>
+                                    <div className="text-xs text-[#71717a] mb-3">
+                                        {product.pricingTiers.length} gói giá
+                                    </div>
                                     <div className="flex gap-2">
                                         <button
                                             onClick={() => handleEditProduct(product)}
@@ -595,8 +658,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                                 <button
                                     onClick={() => setBillUploadMode('file')}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${billUploadMode === 'file'
-                                        ? 'bg-[#00ff88] text-[#0a0a12]'
-                                        : 'bg-[#2a2a3a] text-[#a1a1aa] hover:text-white'
+                                            ? 'bg-[#00ff88] text-[#0a0a12]'
+                                            : 'bg-[#2a2a3a] text-[#a1a1aa] hover:text-white'
                                         }`}
                                 >
                                     <Upload className="w-4 h-4" />
@@ -605,8 +668,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                                 <button
                                     onClick={() => setBillUploadMode('url')}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${billUploadMode === 'url'
-                                        ? 'bg-[#00ff88] text-[#0a0a12]'
-                                        : 'bg-[#2a2a3a] text-[#a1a1aa] hover:text-white'
+                                            ? 'bg-[#00ff88] text-[#0a0a12]'
+                                            : 'bg-[#2a2a3a] text-[#a1a1aa] hover:text-white'
                                         }`}
                                 >
                                     <LinkIcon className="w-4 h-4" />
