@@ -22,10 +22,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const storedBills = localStorage.getItem(BILLS_KEY);
 
             if (storedProducts) {
-                setProducts(JSON.parse(storedProducts));
+                try {
+                    const parsed = JSON.parse(storedProducts);
+                    // Validate that products have the new pricingTiers structure
+                    if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].pricingTiers) {
+                        setProducts(parsed);
+                    } else {
+                        // Old data structure, use initial data instead
+                        localStorage.setItem(PRODUCTS_KEY, JSON.stringify(initialProducts));
+                    }
+                } catch {
+                    // Invalid JSON, use initial data
+                    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(initialProducts));
+                }
             }
             if (storedBills) {
-                setBills(JSON.parse(storedBills));
+                try {
+                    const parsed = JSON.parse(storedBills);
+                    if (Array.isArray(parsed)) {
+                        setBills(parsed);
+                    }
+                } catch {
+                    // Invalid JSON, use initial data
+                }
             }
             setIsInitialized(true);
         }
