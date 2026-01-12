@@ -1,106 +1,184 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Product, Bill, AppContextType } from './types';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { initialProducts, initialBills } from './data';
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+// Types for frontend
+export interface PricingTier {
+    id?: number;
+    duration: string;
+    requestLimit: string;
+    price: number;
+    isPopular?: boolean;
+}
 
-// Storage keys
-const PRODUCTS_KEY = 'ai_shop_products';
-const BILLS_KEY = 'ai_shop_bills';
+export interface Product {
+    id: string;
+    name: string;
+    icon: string;
+    imageUrl?: string | null;
+    description: string;
+    features: string[];
+    pricingTiers: PricingTier[];
+    tag?: string | null;
+    contactLink: string;
+    isActive: boolean;
+    createdAt: Date | string;
+    updatedAt: Date | string;
+}
+
+export interface Bill {
+    id: string;
+    imageUrl: string;
+    date: string;
+    description?: string | null;
+    createdAt: Date | string;
+}
+
+interface AppContextType {
+    products: Product[];
+    bills: Bill[];
+    loading: boolean;
+    addProduct: (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+    updateProduct: (id: string, product: Partial<Product>) => Promise<void>;
+    deleteProduct: (id: string) => Promise<void>;
+    addBill: (bill: Omit<Bill, 'id' | 'createdAt'>) => Promise<void>;
+    deleteBill: (id: string) => Promise<void>;
+    refreshData: () => Promise<void>;
+}
+
+const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
     const [products, setProducts] = useState<Product[]>(initialProducts);
     const [bills, setBills] = useState<Bill[]>(initialBills);
-    const [isInitialized, setIsInitialized] = useState(false);
+    const [loading, setLoading] = useState(true);
 
-    // Load from localStorage on mount
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const storedProducts = localStorage.getItem(PRODUCTS_KEY);
-            const storedBills = localStorage.getItem(BILLS_KEY);
+    // Fetch data from API
+    const refreshData = useCallback(async () => {
+        try {
+            const [productsRes, billsRes] = await Promise.all([
+                fetch('/api/products'),
+                fetch('/api/bills'),
+            ]);
 
-            if (storedProducts) {
-                try {
-                    const parsed = JSON.parse(storedProducts);
-                    // Validate that products have the new pricingTiers structure
-                    if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].pricingTiers) {
-                        setProducts(parsed);
-                    } else {
-                        // Old data structure, use initial data instead
-                        localStorage.setItem(PRODUCTS_KEY, JSON.stringify(initialProducts));
-                    }
-                } catch {
-                    // Invalid JSON, use initial data
-                    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(initialProducts));
+            if (productsRes.ok) {
+                const productsData = await productsRes.json();
+                if (Array.isArray(productsData) && productsData.length > 0) {
+                    setProducts(productsData);
                 }
             }
-            if (storedBills) {
-                try {
-                    const parsed = JSON.parse(storedBills);
-                    if (Array.isArray(parsed)) {
-                        setBills(parsed);
-                    }
-                } catch {
-                    // Invalid JSON, use initial data
+
+            if (billsRes.ok) {
+                const billsData = await billsRes.json();
+                if (Array.isArray(billsData)) {
+                    setBills(billsData);
                 }
             }
-            setIsInitialized(true);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            // Keep using initial data on error
+        } finally {
+            setLoading(false);
         }
     }, []);
 
-    // Save to localStorage when data changes
+    // Load data on mount
     useEffect(() => {
-        if (isInitialized && typeof window !== 'undefined') {
-            localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
-        }
-    }, [products, isInitialized]);
-
-    useEffect(() => {
-        if (isInitialized && typeof window !== 'undefined') {
-            localStorage.setItem(BILLS_KEY, JSON.stringify(bills));
-        }
-    }, [bills, isInitialized]);
+        refreshData();
+    }, [refreshData]);
 
     // Product operations
-    const addProduct = (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
-        const now = new Date().toISOString();
-        const newProduct: Product = {
-            ...productData,
-            id: Date.now().toString(),
-            createdAt: now,
-            updatedAt: now,
-        };
-        setProducts((prev) => [...prev, newProduct]);
+    const addProduct = async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
+        try {
+            const res = await fetch('/api/products', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(productData),
+            });
+
+            if (res.ok) {
+                await refreshData();
+            } else {
+                throw new Error('Failed to add product');
+            }
+        } catch (error) {
+            console.error('Error adding product:', error);
+            throw error;
+        }
     };
 
-    const updateProduct = (id: string, productData: Partial<Product>) => {
-        setProducts((prev) =>
-            prev.map((product) =>
-                product.id === id
-                    ? { ...product, ...productData, updatedAt: new Date().toISOString() }
-                    : product
-            )
-        );
+    const updateProduct = async (id: string, productData: Partial<Product>) => {
+        try {
+            const res = await fetch(`/api/products/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(productData),
+            });
+
+            if (res.ok) {
+                await refreshData();
+            } else {
+                throw new Error('Failed to update product');
+            }
+        } catch (error) {
+            console.error('Error updating product:', error);
+            throw error;
+        }
     };
 
-    const deleteProduct = (id: string) => {
-        setProducts((prev) => prev.filter((product) => product.id !== id));
+    const deleteProduct = async (id: string) => {
+        try {
+            const res = await fetch(`/api/products/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (res.ok) {
+                await refreshData();
+            } else {
+                throw new Error('Failed to delete product');
+            }
+        } catch (error) {
+            console.error('Error deleting product:', error);
+            throw error;
+        }
     };
 
     // Bill operations
-    const addBill = (billData: Omit<Bill, 'id' | 'createdAt'>) => {
-        const newBill: Bill = {
-            ...billData,
-            id: Date.now().toString(),
-            createdAt: new Date().toISOString(),
-        };
-        setBills((prev) => [newBill, ...prev]);
+    const addBill = async (billData: Omit<Bill, 'id' | 'createdAt'>) => {
+        try {
+            const res = await fetch('/api/bills', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(billData),
+            });
+
+            if (res.ok) {
+                await refreshData();
+            } else {
+                throw new Error('Failed to add bill');
+            }
+        } catch (error) {
+            console.error('Error adding bill:', error);
+            throw error;
+        }
     };
 
-    const deleteBill = (id: string) => {
-        setBills((prev) => prev.filter((bill) => bill.id !== id));
+    const deleteBill = async (id: string) => {
+        try {
+            const res = await fetch(`/api/bills/${id}`, {
+                method: 'DELETE',
+            });
+
+            if (res.ok) {
+                await refreshData();
+            } else {
+                throw new Error('Failed to delete bill');
+            }
+        } catch (error) {
+            console.error('Error deleting bill:', error);
+            throw error;
+        }
     };
 
     return (
@@ -108,11 +186,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
             value={{
                 products,
                 bills,
+                loading,
                 addProduct,
                 updateProduct,
                 deleteProduct,
                 addBill,
                 deleteBill,
+                refreshData,
             }}
         >
             {children}

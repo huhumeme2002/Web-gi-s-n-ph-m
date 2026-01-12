@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useAppContext } from '@/lib/context';
-import { Product, PricingTier } from '@/lib/types';
+import { useAppContext, Product, PricingTier } from '@/lib/context';
 import {
     Shield,
     Package,
