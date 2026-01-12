@@ -1,8 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Dark Cyber Theme Colors */
+  --background: #0a0a12;
+  --background-secondary: #12121a;
+  --foreground: #e4e4e7;
+  --foreground-muted: #a1a1aa;
+
+  /* Neon accent colors */
+  --accent-primary: #00ff88;
+  --accent-secondary: #00ccff;
+  --accent-tertiary: #ff00ff;
+  --accent-warning: #ffcc00;
+
+  /* Card colors */
+  --card-bg: #16161e;
+  --card-border: #2a2a3a;
+  --card-hover: #1e1e28;
+
+  /* Price colors */
+  --price-current: #00ff88;
+  --price-original: #71717a;
+
+  /* Tag colors */
+  --tag-bestseller: #ff6b35;
+  --tag-hot: #ff3366;
+  --tag-new: #00ccff;
 }
 
 @theme inline {
@@ -12,15 +35,211 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-secondary);
+}
+
+/* Glow effects */
+.glow-green {
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.3),
+    0 0 40px rgba(0, 255, 136, 0.1);
+}
+
+.glow-blue {
+  box-shadow: 0 0 20px rgba(0, 204, 255, 0.3),
+    0 0 40px rgba(0, 204, 255, 0.1);
+}
+
+.glow-text {
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.5),
+    0 0 20px rgba(0, 255, 136, 0.3);
+}
+
+/* Animated gradient background */
+.gradient-bg {
+  background: linear-gradient(135deg,
+      rgba(0, 255, 136, 0.1) 0%,
+      rgba(0, 204, 255, 0.05) 50%,
+      rgba(255, 0, 255, 0.05) 100%);
+}
+
+.gradient-animated {
+  background: linear-gradient(270deg,
+      rgba(0, 255, 136, 0.1),
+      rgba(0, 204, 255, 0.1),
+      rgba(255, 0, 255, 0.1),
+      rgba(0, 255, 136, 0.1));
+  background-size: 400% 400%;
+  animation: gradientShift 8s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Pulse animation for CTAs */
+.pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(0, 255, 136, 0.6),
+      0 0 60px rgba(0, 255, 136, 0.3);
+  }
+}
+
+/* Card hover animation */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 40px rgba(0, 255, 136, 0.15),
+    0 0 0 1px rgba(0, 255, 136, 0.2);
+}
+
+/* Button styles */
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-primary), #00cc6a);
+  color: #0a0a12;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--accent-primary);
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  border: 2px solid var(--accent-primary);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: rgba(0, 255, 136, 0.1);
+}
+
+/* Tag styles */
+.tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tag-bestseller {
+  background: rgba(255, 107, 53, 0.2);
+  color: var(--tag-bestseller);
+  border: 1px solid rgba(255, 107, 53, 0.3);
+}
+
+.tag-hot {
+  background: rgba(255, 51, 102, 0.2);
+  color: var(--tag-hot);
+  border: 1px solid rgba(255, 51, 102, 0.3);
+}
+
+.tag-new {
+  background: rgba(0, 204, 255, 0.2);
+  color: var(--tag-new);
+  border: 1px solid rgba(0, 204, 255, 0.3);
+}
+
+/* Section styles */
+.section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--foreground), var(--accent-primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Grid pattern background */
+.grid-pattern {
+  background-image:
+    linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Input styles for admin */
+.input-dark {
+  background: var(--background-secondary);
+  border: 1px solid var(--card-border);
+  color: var(--foreground);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.input-dark:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+}
+
+.input-dark::placeholder {
+  color: var(--foreground-muted);
 }
