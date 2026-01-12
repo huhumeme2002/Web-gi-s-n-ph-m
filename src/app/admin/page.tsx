@@ -21,7 +21,7 @@ import {
 import Link from 'next/link';
 import Image from 'next/image';
 
-const ADMIN_PASSWORD = 'admin123'; // Change this to your desired password
+const ADMIN_PASSWORD = 'Khanh2003@'; // Change this to your desired password
 
 // Helper function to convert file to base64
 const fileToBase64 = (file: File): Promise<string> => {
@@ -658,8 +658,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                                 <button
                                     onClick={() => setBillUploadMode('file')}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${billUploadMode === 'file'
-                                            ? 'bg-[#00ff88] text-[#0a0a12]'
-                                            : 'bg-[#2a2a3a] text-[#a1a1aa] hover:text-white'
+                                        ? 'bg-[#00ff88] text-[#0a0a12]'
+                                        : 'bg-[#2a2a3a] text-[#a1a1aa] hover:text-white'
                                         }`}
                                 >
                                     <Upload className="w-4 h-4" />
@@ -668,8 +668,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                                 <button
                                     onClick={() => setBillUploadMode('url')}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${billUploadMode === 'url'
-                                            ? 'bg-[#00ff88] text-[#0a0a12]'
-                                            : 'bg-[#2a2a3a] text-[#a1a1aa] hover:text-white'
+                                        ? 'bg-[#00ff88] text-[#0a0a12]'
+                                        : 'bg-[#2a2a3a] text-[#a1a1aa] hover:text-white'
                                         }`}
                                 >
                                     <LinkIcon className="w-4 h-4" />
